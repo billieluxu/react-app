@@ -1,22 +1,27 @@
 import React, { FormEvent, useRef, useState } from "react";
 import { FieldValues, useForm } from "react-hook-form";
+import { isValid, z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const Form = () => {
   //   const nameRef = useRef<HTMLInputElement>(null);
   //   const ageRef = useRef<HTMLInputElement>(null);
 
+  const schema = z.object({
+    name: z.string().min(3, "Minimum 3 characters"),
+    age: z
+      .number({ invalid_type_error: "age field is quired" })
+      .min(18, "Age must be above 18"),
+  });
+  type FormData = z.infer<typeof schema>;
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>();
+    formState: { errors, isValid },
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = (data: FieldValues) => console.log(data);
-
-  interface FormData {
-    name: string;
-    age: number;
-  }
 
   //   const [person, setPerson] = useState({ name: "", age: "" });
 
@@ -26,18 +31,13 @@ const Form = () => {
         <label htmlFor="name" className="form-label">
           Name
         </label>
-        {errors.name?.type === "required" && (
-          <p className="text-danger">The name field is required</p>
-        )}
-        {errors.name?.type === "minLength" && (
-          <p className="text-danger">The minimum length must be 3 characters</p>
-        )}
+        {errors.name && <p className="text-danger">{errors.name.message}</p>}
 
         <input
           //   onChange={(event) =>
           //     setPerson({ ...person, name: event.target.value })
           //   }
-          {...register("name", { required: true, minLength: 3 })}
+          {...register("name")}
           id="name"
           //   value={person.name}
           //   ref={nameRef}
@@ -49,11 +49,13 @@ const Form = () => {
         <label htmlFor="age" className="form-label">
           Age
         </label>
+        {errors.age && <p className="text-danger">{errors.age.message}</p>}
+
         <input
           //   onChange={(event) =>
           //     setPerson({ ...person, age: parseInt(event.target.value) })
           //   }
-          {...register("age")}
+          {...register("age", { valueAsNumber: true })}
           id="age"
           //   value={person.age}
           //   ref={ageRef}
@@ -61,7 +63,7 @@ const Form = () => {
           className="form-control"
         />
       </div>
-      <button className="btn btn-primary" type="submit">
+      <button disabled={!isValid} className="btn btn-primary" type="submit">
         Submit
       </button>
     </form>
